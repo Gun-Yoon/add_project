@@ -50,10 +50,10 @@ print(color.BOLD+"\n데이터 호출"+color.END)
 data = pd.read_csv("dataset/Unknown_data.csv")
 #data = data.sample(frac=0.1, random_state=43)
 y = data['Label']
-X = data.drop(['Label'], axis=1)
-std_scaler = StandardScaler()
-fitted = std_scaler.fit(X)
-X = std_scaler.transform(X)
+X = data.drop(['Label'], axis=1).to_numpy()
+#std_scaler = StandardScaler()
+#fitted = std_scaler.fit(X)
+#X = std_scaler.transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 

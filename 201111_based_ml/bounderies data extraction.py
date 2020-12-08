@@ -10,6 +10,7 @@
 from scipy.spatial import distance
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 class color:
    PURPLE = '\033[95m'
@@ -23,16 +24,16 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
-benign_data = pd.read_csv("dataset/df_benign.csv")
-attack_data = pd.read_csv("dataset/df_attack.csv")
-centroid = [[0.938805887305535, 0.9810643328255747, 0.07532707510788424, 0.9832582374136084, 0.97639971807557,
-             0.7644889545720601, 0.8412442248395775, 0.2948681215639623, 0.26714266736526215, 0.2941154022780497,
-             -0.015326195389452317, 0.9342591683014572, 0.7218558391174821, -0.12278416871385163, 0.97639971807557,
-             0.8412442248395775, 0.9810643328255747, 0.07532707510788424, -0.04235995283569242],
-            [-0.9383893225594496, -0.9976158145483698, -0.08836943762501397, -0.998563612533996, -1.0023682656258093,
-             -0.8709686348059381, -0.920066230246388, -0.3863745535796511, -0.35639708585938906, -0.38557230344189963,
-             0.0022184005898271187, -0.9564343386668844, -0.7825304543717697, 0.09573598577920255, -1.0023682656258093,
-             -0.920066230246388, -0.9976158145483698, -0.08836943762501397, -0.07639214458746109]]
+benign_raw = pd.read_csv("dataset/df_benign.csv")
+attack_raw = pd.read_csv("dataset/df_attack.csv")
+standard_data = pd.concat([benign_raw, attack_raw], axis=0)
+centroid = [[45848.247303895856, 922.4596065577446, 407.1701727877382, 921.2567857963534, 186.47624411743897, 359.5369967117907, 119.48956722210153, 4810168.213311829, 1225757.1736451185, 4680330.184515111, 7642.554275982365, 166.3395995391915, 115.93853496622576, 1.146745429159639, 186.47624411743897, 119.48956722210153, 922.4596065577446, 407.1701727877382, 228.03583818404033], [901.4383214885949, 18.938521656572696, 36.07221827473216, 18.647858973421794, 5.190672412919071, 32.333730375893985, 8.233846150083142, 303954.56412531785, 90709.11172267026, 295205.78344028664, 19399.22321726312, 70.36320483630978, 5.830471136532167, 1223.977788196416, 5.190672412919071, 8.233846150083142, 18.938521656572696, 36.07221827473216, 1047.4925292635908]]
+
+std_scaler = StandardScaler()
+fitted = std_scaler.fit(standard_data)
+benign_data = pd.DataFrame(data=std_scaler.transform(benign_raw), columns=benign_raw.columns)
+attack_data = pd.DataFrame(data=std_scaler.transform(attack_raw), columns=attack_raw.columns)
+centroid = list(std_scaler.transform(centroid))
 
 benign_distance = pd.DataFrame(index=range(0,len(benign_data)), columns=['distance'])
 attack_distance = pd.DataFrame(index=range(0,len(attack_data)), columns=['distance'])
@@ -61,12 +62,12 @@ print(color.RED+"\n클러스터 결정경계에 위치되어 있는 데이터 �
 
 print("정상 클러스터 결정 경계 데이터 셋")
 benign_bounderies_index = benign_distance[(benign_distance['distance'] >= (benign_mean+benign_std)) == True]
-benign_bounderies = benign_data.loc[benign_bounderies_index.index.values]
+benign_bounderies = benign_raw.loc[benign_bounderies_index.index.values]
 benign_bounderies.to_csv('dataset/benign_bounderies.csv', index=False)
 print(benign_bounderies.shape)
 
 print("\n위협 클러스터 결정 경계 데이터 셋")
 attack_bounderies_index = attack_distance[(attack_distance['distance'] >= (attack_mean+attack_std)) == True]
-attack_bounderies = attack_data.loc[attack_bounderies_index.index.values]
+attack_bounderies = attack_raw.loc[attack_bounderies_index.index.values]
 attack_bounderies.to_csv('dataset/attack_bounderies.csv', index=False)
 print(attack_bounderies.shape)

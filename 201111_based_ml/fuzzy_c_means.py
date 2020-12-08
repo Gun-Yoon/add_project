@@ -29,9 +29,10 @@ def check_match(df):
 data = pd.read_csv("dataset/Unknown_data.csv")
 X = data.drop(['Label'], axis=1)
 col = X.columns
-std_scaler = StandardScaler()
-fitted = std_scaler.fit(X)
-X = std_scaler.transform(X)
+#std_scaler = StandardScaler()
+#fitted = std_scaler.fit(X)
+#X = std_scaler.transform(X)
+X = X.to_numpy()
 
 y = data['Label']
 le = LabelEncoder().fit(y)
@@ -40,14 +41,7 @@ y = le.transform(y)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-centers = [[0.8780548390411661, 0.9434844754118773, 0.08570221749085585, 0.9441549808772682, 0.9508694103254853,
-            0.8535406951590411, 0.8905401456770801, 0.39582444741022377, 0.3667930775720254, 0.3952155401243918,
-            0.0032622049637311616, 0.9069492338739097, 0.7504700387230853, -0.13242523171180198, 0.9508694103254853,
-            0.8905401456770801, 0.9434844754118773, 0.08570221749085585, 0.11618334316338697],
-           [-0.9412667613865507, -1.0119779944751732, -0.09306364705246235, -1.0126546024310055, -1.019845635380197,
-            -0.9157598569900075, -0.9550845402220292, -0.426040107421912, -0.3949314190439888, -0.4252499970085256,
-            -0.004498061858428147, -0.9732354941599739, -0.8057760992662832, 0.14348119625617362, -1.019845635380197,
-            -0.9550845402220292, -1.0119779944751732, -0.09306364705246235, -0.12494198981745376]]
+centers = [[45747.855292236476, 921.3124659206626, 407.06764737948333, 919.9929402443679, 186.2265678694155, 360.50848605554114, 119.16421198018449, 5595039.8150694445, 1432236.89777364, 5451485.625738382, 21955.05634316005, 166.3279399863208, 116.3242207005973, 1.1114355393300457, 186.2265678694155, 119.16421198018449, 921.3124659206626, 407.06764737948333, 229.59300510278956], [633.5453868005061, 13.311492579165701, 35.45257318447153, 13.051967221349628, 4.065577055191767, 29.922603051099713, 7.58443241651873, 25286.235250015743, 17660.494008300826, 21851.365482692607, 14800.013759329424, 69.73815264740048, 5.022356752792227, 1233.9959969564013, 4.065577055191767, 7.58443241651873, 13.311492579165701, 35.45257318447153, 1053.2675415630874]]
 
 # fit the fuzzy-c-means
 fcm = FCM(n_clusters=2, first_center=centers, max_iter=100)
@@ -85,6 +79,7 @@ print(color.BOLD+"\nValidate records in cluster(find invalid record)"+color.END)
 dif_df = check_different(result_df)
 #dif_df.to_csv('probability_data.csv', index=False)
 print(dif_df.head())
+print(dif_df.shape)
 
 #probability threshold(pt)를 기준으로 부합한 데이터 추출
 # 0.4 <= pt <= 0.6
@@ -92,16 +87,18 @@ print(color.BOLD+"\nCheck probability threshold"+color.END)
 for i in dif_df.index:
     if dif_df.loc[i][0] <= 0.4 or dif_df.loc[i][0] >= 0.6:
         dif_df = dif_df.drop([i])
-print(dif_df.head(10))
+print(dif_df.head(5))
+print(dif_df.shape)
 
 print(color.BOLD+"\nSave invalid cluster"+color.END)
 test_data = pd.DataFrame(data=X_test, columns=col)
 invalid_data = test_data.loc[dif_df.index.values]
-invalid_data.to_csv('dataset/different_data.csv', index=False)
+#invalid_data.to_csv('dataset/different_data.csv', index=False)
 test_data_label = pd.DataFrame(data=y_test, columns=['class'])
 invalid_data_label = test_data_label.loc[dif_df.index.values]
-invalid_data_label.to_csv('dataset/different_data_label.csv', index=False)
+#invalid_data_label.to_csv('dataset/different_data_label.csv', index=False)
 print(invalid_data.head(10))
+print(invalid_data.shape)
 
 print(color.BOLD+"\nCheck correct record"+color.END)
 corr_df = check_match(result_df)
@@ -110,12 +107,12 @@ df_attack = corr_df[(corr_df['class'] == 1) == True]
 
 benign_data = test_data.loc[df_benign.index.values]
 attack_data = test_data.loc[df_attack.index.values]
-benign_data.to_csv('dataset/df_benign.csv', index=False)
-attack_data.to_csv('dataset/df_attack.csv', index=False)
+#benign_data.to_csv('dataset/df_benign.csv', index=False)
+#attack_data.to_csv('dataset/df_attack.csv', index=False)
 print("Benign data set")
-print(benign_data.head(10))
+print(benign_data.head(5))
 print("\nAttack data set")
-print(attack_data.head(10))
+print(attack_data.head(5))
 
 print(color.BOLD+"\nCheck centroid vector"+color.END)
 print(fcm_centers.tolist())
