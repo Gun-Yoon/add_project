@@ -22,7 +22,7 @@ class color:
 
 # Some variables
 NUM_CLUSTERS = 2
-k_num = 5
+k_num = 10
 kf = KFold(n_splits=k_num, shuffle=True, random_state=42)
 
 print(color.BOLD+"\n데이터 호출"+color.END)

@@ -30,7 +30,7 @@ standard_data = pd.concat([benign_raw, attack_raw], axis=0)
 centroid = [[45848.247303895856, 922.4596065577446, 407.1701727877382, 921.2567857963534, 186.47624411743897, 359.5369967117907, 119.48956722210153, 4810168.213311829, 1225757.1736451185, 4680330.184515111, 7642.554275982365, 166.3395995391915, 115.93853496622576, 1.146745429159639, 186.47624411743897, 119.48956722210153, 922.4596065577446, 407.1701727877382, 228.03583818404033], [901.4383214885949, 18.938521656572696, 36.07221827473216, 18.647858973421794, 5.190672412919071, 32.333730375893985, 8.233846150083142, 303954.56412531785, 90709.11172267026, 295205.78344028664, 19399.22321726312, 70.36320483630978, 5.830471136532167, 1223.977788196416, 5.190672412919071, 8.233846150083142, 18.938521656572696, 36.07221827473216, 1047.4925292635908]]
 
 std_scaler = StandardScaler()
-fitted = std_scaler.fit(standard_data)
+std_scaler.fit(standard_data)
 benign_data = pd.DataFrame(data=std_scaler.transform(benign_raw), columns=benign_raw.columns)
 attack_data = pd.DataFrame(data=std_scaler.transform(attack_raw), columns=attack_raw.columns)
 centroid = list(std_scaler.transform(centroid))
@@ -63,11 +63,11 @@ print(color.RED+"\n클러스터 결정경계에 위치되어 있는 데이터 �
 print("정상 클러스터 결정 경계 데이터 셋")
 benign_bounderies_index = benign_distance[(benign_distance['distance'] >= (benign_mean+benign_std)) == True]
 benign_bounderies = benign_raw.loc[benign_bounderies_index.index.values]
-benign_bounderies.to_csv('dataset/benign_bounderies.csv', index=False)
+#benign_bounderies.to_csv('dataset/benign_bounderies.csv', index=False)
 print(benign_bounderies.shape)
 
 print("\n위협 클러스터 결정 경계 데이터 셋")
 attack_bounderies_index = attack_distance[(attack_distance['distance'] >= (attack_mean+attack_std)) == True]
 attack_bounderies = attack_raw.loc[attack_bounderies_index.index.values]
-attack_bounderies.to_csv('dataset/attack_bounderies.csv', index=False)
+#attack_bounderies.to_csv('dataset/attack_bounderies.csv', index=False)
 print(attack_bounderies.shape)
