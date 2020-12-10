@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 import numpy as np
 import pandas as pd
+from sklearn.metrics import roc_curve,roc_auc_score
+import matplotlib.pyplot as plt
 from scipy.spatial import distance
 
 def scoring(df):
@@ -25,6 +27,29 @@ def check_different(df):
   dif_indexes = df[(df['actual'] != df['predict']) == True]
   true_indexes = df[(df['actual'] == df['predict']) == True]
   return dif_indexes, true_indexes
+
+def roc(name,list):
+    # calculate scores
+    roc_score_list = []
+    for i in range(len(name)):
+        temp_auc = roc_auc_score(list[i]['actual'], list[i]['predict'])
+        print(name[i]+'ROC AUC=%.3f' %(temp_auc))
+        roc_score_list.append(temp_auc)
+
+    # calculate roc curves
+    for i in range(len(name)):
+        temp_fpr, temp_tpr, _ = roc_curve(list[i]['actual'], list[i]['predict'])
+        plt.plot(temp_fpr, temp_tpr, label=name[i])
+
+    # axis labels
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+
+    # show the legend
+    plt.legend()
+
+    # show the plot
+    plt.show()
 
 # Some variables
 NUM_CLUSTERS = 2
@@ -53,7 +78,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 #K-means
 print("\nK-means")
-kmeans = KMeans(n_clusters=NUM_CLUSTERS, init=centers_arr, max_iter=100, n_init=1)
+kmeans = KMeans(n_clusters=NUM_CLUSTERS, init='random', max_iter=1000, n_init=100)
 kmeans.fit(X_train)
 predic_km = kmeans.predict(X_test)
 kmeans_df = pd.DataFrame(data=predic_km, columns=['predict'])
@@ -62,7 +87,7 @@ kmeans_result = scoring(kmeans_df)
 
 #K-means++
 print("\nK-means++")
-kmeans_plus = KMeans(n_clusters=NUM_CLUSTERS, init='k-means++', max_iter=100, n_init=1)
+kmeans_plus = KMeans(n_clusters=NUM_CLUSTERS, init='k-means++', max_iter=1000, n_init=100)
 kmeans_plus.fit(X_train)
 predic_plus = kmeans_plus.predict(X_test)
 plus_df = pd.DataFrame(data=predic_plus, columns=['predict'])
@@ -71,7 +96,7 @@ plus_result = scoring(plus_df)
 
 #fuzzy c-means
 print("\nfuzzy c-means")
-fcm = FCM(n_clusters=2, first_center=centers, max_iter=100)
+fcm = FCM(n_clusters=2, first_center=list(kmeans.cluster_centers_), max_iter=100, random_state=42)
 fcm.fit(X_train)
 probability = fcm.predict(X_test)
 probability = np.array(probability)
@@ -81,7 +106,7 @@ fcm_result = scoring(fcm_df)
 
 #Our proposed method
 print("\nOur proposed")
-fcm = FCM(n_clusters=2, first_center=centers, max_iter=100)
+fcm = FCM(n_clusters=2, first_center=centers, max_iter=100, random_state=42)
 fcm.fit(X_train)
 probability = fcm.predict(X_test)
 probability = np.array(probability)
@@ -90,11 +115,12 @@ fcm_df['actual'] = y_test
 
 #Validate records in cluster(find invalid record)
 dif_df, true_df = check_different(fcm_df)
+dif_data = dif_df
 
 #probability threshold(pt)를 기준으로 부합한 데이터 추출(0.46 < Threshold < 0.54)
 wrong_index = []
 for i in dif_df.index:
-    if dif_df.loc[i][0] <= 0.46 or dif_df.loc[i][0] >= 0.54:
+    if dif_df.loc[i][0] <= 0.09 or dif_df.loc[i][0] >= 0.91:
         wrong_index.append(i)
         dif_df = dif_df.drop([i])
 
@@ -150,10 +176,12 @@ print('정상 평균 : {0}\n정상 표준편차 : {1}\n위협 평균 : {2}\n위�
 
 #클러스터 결정경계에 위치되어 있는 데이터 추출
 benign_bounderies_index = benign_distance[(benign_distance['distance'] >= (benign_mean+benign_std)) == True]
-benign_bounderies = benign_data.loc[benign_bounderies_index.index]
+benign_bounderies = benign_data.loc[benign_bounderies_index.index.values]
+print("\nbenign boundery : %s"%str(benign_bounderies.shape))
 
 attack_bounderies_index = attack_distance[(attack_distance['distance'] >= (attack_mean+attack_std)) == True]
 attack_bounderies = attack_data.loc[attack_bounderies_index.index.values]
+print("\nattack boundery : %s"%str(attack_bounderies.shape))
 
 standard_data = pd.concat([benign_bounderies, attack_bounderies], axis=0)
 std_scaler = StandardScaler()
@@ -161,6 +189,7 @@ fitted = std_scaler.fit(standard_data)
 benign_bounderies_scaler = pd.DataFrame(data=std_scaler.transform(benign_bounderies), columns=benign_bounderies.columns)
 attack_bounderies_scaler = pd.DataFrame(data=std_scaler.transform(attack_bounderies), columns=attack_bounderies.columns)
 diff_data = pd.DataFrame(data=std_scaler.transform(pt_data), columns=pt_data.columns)
+print("\nInvalid Data : %s"%str(diff_data.shape))
 
 benign_dis = pd.DataFrame(index=range(0,len(benign_bounderies_scaler)), columns=['distance'])
 attack_dis = pd.DataFrame(index=range(0,len(attack_bounderies_scaler)), columns=['distance'])
@@ -175,13 +204,15 @@ for j in range(len(diff_data)):
         attack_dis.loc[i] = distance.euclidean(attack_bounderies_scaler.loc[i],diff_data.loc[j])
 
     if benign_dis['distance'].min() > attack_dis['distance'].min():
+        print("{0}번째 Invalid Data => Attack / {1} : {2}".format(j, benign_dis['distance'].min(),attack_dis['distance'].min()))
         dif_prelist.append(1)
     else:
+        print("{0}번째 Invalid Data => Benign / {1} : {2}".format(j, benign_dis['distance'].min(),attack_dis['distance'].min()))
         dif_prelist.append(0)
 
 dif_predict = pd.DataFrame(data=dif_prelist, columns=['predict'])
 
-incorrect_data = dif_df.loc[wrong_index]
+incorrect_data = dif_data.loc[wrong_index]
 temp_belist = [0 for i in range(len(df_benign))]
 temp_atlist = [1 for i in range(len(df_attack))]
 temp_inpredic = incorrect_data['predict'].tolist()
@@ -193,11 +224,17 @@ our_proposed_df = pd.DataFrame(data=dif_prelist, columns=['predict'])
 temp_label = pt_data_label['actual'].tolist()
 temp_label = temp_label+temp_belist+temp_atlist+temp_inactual
 our_proposed_df['actual'] = temp_label
+print("Shap : %s"%str(our_proposed_df.shape))
 
 our_proposed_result = scoring(our_proposed_df)
 
 #validation
-result_arr = np.array([kmeans_result,plus_result,fcm_result+our_proposed_result])
-result_df = pd.DataFrame(data=result_arr,columns=['accuracy','Precision','Recall','F1','tn','fp','fn','tp'],
-                         index=['kmeans','kmeans++','fuzzy c-means','our proposed'])
+result_arr = np.array([kmeans_result,plus_result,fcm_result,our_proposed_result])
+result_df = pd.DataFrame(data=result_arr,columns=['accuracy','Precision','Recall','F1','tn','fp','fn','tp'],index=['kmeans','kmeans++','fuzzy c-means','our proposed'])
 print(result_df)
+result_df.to_csv("dataset/result_t41.csv")
+
+#Make ROC Curve
+df_list = [kmeans_df, plus_df, fcm_df, our_proposed_df]
+name_list = ['kmeans','kmeans++','fuzzy c-means','our proposed']
+roc(name_list, df_list)

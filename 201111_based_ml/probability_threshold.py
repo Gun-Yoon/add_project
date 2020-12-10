@@ -59,17 +59,16 @@ print(dif_data.shape)
 
 #probability threshold(pt)를 기준으로 부합한 데이터 추출
 # 0.4 <= pt <= 0.6
-small_num = [0.49,0.48,0.47,0.46,0.45,0.44,0.43,0.42,0.41,0.40,0.39,0.38,0.37,0.36,0.35,0.34,0.33,0.32,0.31,0.30]
-big_num = [0.51,0.52,0.53,0.54,0.55,0.56,0.57,0.58,0.59,0.60,0.61,0.62,0.63,0.64,0.65,0.66,0.67,0.68,0.69,0.70]
-result_data = pd.DataFrame(index=range(0,25),columns=['accuracy','precision','recall','f1-score','time','number of data'])
+small_num = [round(i*(0.01),2) for i in range(1,50)]
+small_num.reverse()
+big_num = [round(i*(0.01),2) for i in range(51,101)]
+result_data = pd.DataFrame(index=range(0,len(big_num)),columns=['accuracy','precision','recall','f1-score','time','number of data'])
 
-for j in range(len(small_num)):
-    wrong_index = []
+for k in range(len(small_num)):
     dif_df = dif_data
-    print(color.BOLD + "\nCheck probability threshold : "+str(small_num[j])+"<=Threshold<="+str(big_num[j])+ color.END)
+    print(color.BOLD + "\nCheck probability threshold : "+str(small_num[k])+"<=Threshold<="+str(big_num[k])+ color.END)
     for i in dif_df.index:
-        if dif_df.loc[i][0] <= small_num[j] or dif_df.loc[i][0] >= big_num[j]:
-            wrong_index.append(i)
+        if dif_df.loc[i][0] <= small_num[k] or dif_df.loc[i][0] >= big_num[k]:
             dif_df = dif_df.drop([i])
     print(dif_df.shape)
 
@@ -164,16 +163,8 @@ for j in range(len(small_num)):
             dif_prelist.append(0)
     t_end = time.time()
 
-    incorrect_data = dif_data.loc[wrong_index]
-    temp_inpredic = incorrect_data['pre_class'].tolist()
-    temp_inactual = incorrect_data['class'].tolist()
-
-    dif_prelist = dif_prelist+temp_inpredic
     pt_df = pd.DataFrame(data=dif_prelist, columns=['predict'])
-
-    temp_label = invalid_data_label['class'].tolist()
-    temp_label = temp_label+temp_inactual
-    pt_df['actual'] = temp_label
+    pt_df['actual'] = invalid_data_label['class'].tolist()
     print(pt_df.shape)
 
     accuracy = accuracy_score(pt_df['actual'], pt_df['predict'])
@@ -183,10 +174,10 @@ for j in range(len(small_num)):
     recall = sum(recall) / 2
     f1 = f1_score(pt_df['actual'], pt_df['predict'], average=None)
     f1 = sum(f1) / 2
-    print([accuracy, Precision, recall, f1,t_end-t_start,len(invalid_data)])
-    result_data.loc[j] = [accuracy, Precision, recall, f1,t_end-t_start,len(invalid_data)]
+    #print([accuracy, Precision, recall, f1,t_end-t_start,len(invalid_data)])
+    result_data.loc[k] = [accuracy, Precision, recall, f1,t_end-t_start,len(invalid_data)]
+    print(result_data.loc[k])
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-print(result_data.head(5))
 print(result_data.shape)
 result_data.to_csv("dataset/threshold.csv", index=False)
