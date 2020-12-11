@@ -1,52 +1,49 @@
-# roc curve and auc
-from sklearn.datasets import make_classification
-from sklearn.linear_model import LogisticRegression
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score,recall_score,f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_curve
-from sklearn.metrics import roc_auc_score
-import matplotlib.pyplot as plt
+from sklearn.model_selection import KFold
+import pandas as pd
 
-# generate 2 class dataset
-X, y = make_classification(n_samples=1000, n_classes=2, random_state=1)
+def scoring(df):
+   tn, fp, fn, tp = confusion_matrix(df['actual'], df['predict']).ravel()
+   accuracy = accuracy_score(df['actual'], df['predict'])
+   Precision = precision_score(df['actual'], df['predict'], average=None)
+   Precision = sum(Precision) / 2
+   Recall = recall_score(df['actual'], df['predict'], average=None)
+   Recall = sum(Recall) / 2
+   F1 = f1_score(df['actual'], df['predict'], average=None)
+   F1 = sum(F1) / 2
+   score_list = [accuracy,Precision,Recall,F1,tn,fp,fn,tp]
+   return score_list
 
-# split into train/test sets
-trainX, testX, trainy, testy = train_test_split(X, y, test_size=0.5, random_state=2)
+# Some variables
+NUM_CLUSTERS = 2
+k_num = 10
+kf = KFold(n_splits=k_num, shuffle=True, random_state=42)
 
-# generate a no skill prediction (majority class)
-ns_probs = [0 for _ in range(len(testy))]
+print("\n데이터 호출")
+data = pd.read_csv("dataset/Unknown_data.csv")
 
-# fit a model
-model = LogisticRegression(solver='lbfgs')
-model.fit(trainX, trainy)
 
-# predict probabilities
-lr_probs = model.predict_proba(testX)
+y = data['Label']
+le = LabelEncoder().fit(y)
+y = le.transform(y)
 
-# keep probabilities for the positive outcome only
-lr_probs = lr_probs[:, 1]
+X = data.drop(['Label'], axis=1)
+col = X.columns
+X = X.to_numpy()
 
-# calculate scores
-ns_auc = roc_auc_score(testy, ns_probs)
-lr_auc = roc_auc_score(testy, lr_probs)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# summarize scores
-print('No Skill: ROC AUC=%.3f' % (ns_auc))
-print('Logistic: ROC AUC=%.3f' % (lr_auc))
+#DBSCAN
+print("\nDBSCAN")
+ds = DBSCAN()
+ds.fit(X_test)
+predic_ds = ds.fit_predict(X_test)
+ds_df = pd.DataFrame(data=predic_ds, columns=['predict'])
+ds_df['actual'] = y_test
 
-# calculate roc curves
-ns_fpr, ns_tpr, _ = roc_curve(testy, ns_probs)
-lr_fpr, lr_tpr, _ = roc_curve(testy, lr_probs)
-
-# plot the roc curve for the model
-plt.plot(ns_fpr, ns_tpr, linestyle='--', label='No Skill')
-plt.plot(lr_fpr, lr_tpr, marker='.', label='Logistic')
-
-# axis labels
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-
-# show the legend
-plt.legend()
-
-# show the plot
-plt.show()
+ds_result = scoring(ds_df)
+print(ds_result)
+#ds_df.to_csv("dataset/(1)ds_predict.csv", index=False)

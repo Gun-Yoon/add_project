@@ -31,6 +31,7 @@ def check_different(df):
 def roc(name,list):
     # calculate scores
     roc_score_list = []
+    line_style=['-','--','-.',':']
     for i in range(len(name)):
         temp_auc = roc_auc_score(list[i]['actual'], list[i]['predict'])
         print(name[i]+'ROC AUC=%.3f' %(temp_auc))
@@ -39,7 +40,7 @@ def roc(name,list):
     # calculate roc curves
     for i in range(len(name)):
         temp_fpr, temp_tpr, _ = roc_curve(list[i]['actual'], list[i]['predict'])
-        plt.plot(temp_fpr, temp_tpr, label=name[i])
+        plt.plot(temp_fpr, temp_tpr, label=name[i], linewidth=1.0, linestyle=line_style[i])
 
     # axis labels
     plt.xlabel('False Positive Rate')
@@ -96,7 +97,7 @@ plus_result = scoring(plus_df)
 
 #fuzzy c-means
 print("\nfuzzy c-means")
-fcm = FCM(n_clusters=2, first_center=list(kmeans.cluster_centers_), max_iter=100, random_state=42)
+fcm = FCM(n_clusters=2, first_center=centers, max_iter=100, random_state=42)
 fcm.fit(X_train)
 probability = fcm.predict(X_test)
 probability = np.array(probability)
@@ -116,11 +117,12 @@ fcm_df['actual'] = y_test
 #Validate records in cluster(find invalid record)
 dif_df, true_df = check_different(fcm_df)
 dif_data = dif_df
+print("different result : %s"%str(dif_data.shape))
 
 #probability threshold(pt)를 기준으로 부합한 데이터 추출(0.46 < Threshold < 0.54)
 wrong_index = []
 for i in dif_df.index:
-    if dif_df.loc[i][0] <= 0.09 or dif_df.loc[i][0] >= 0.91:
+    if dif_df.loc[i][0] <= 0.1 or dif_df.loc[i][0] >= 0.99:
         wrong_index.append(i)
         dif_df = dif_df.drop([i])
 
@@ -198,10 +200,12 @@ dif_prelist = []
 #Euclidean distance measure between benign/attack boundaries and invalid data
 for j in range(len(diff_data)):
     for i in range(len(benign_bounderies_scaler)):
-        benign_dis.loc[i] = distance.euclidean(benign_bounderies_scaler.loc[i],diff_data.loc[j])
+        #benign_dis.loc[i] = distance.euclidean(benign_bounderies_scaler.loc[i],diff_data.loc[j])
+        benign_dis.loc[i] = distance.cityblock(benign_bounderies_scaler.loc[i], diff_data.loc[j])
 
     for i in range(len(attack_bounderies_scaler)):
-        attack_dis.loc[i] = distance.euclidean(attack_bounderies_scaler.loc[i],diff_data.loc[j])
+        #attack_dis.loc[i] = distance.euclidean(attack_bounderies_scaler.loc[i],diff_data.loc[j])
+        attack_dis.loc[i] = distance.cityblock(attack_bounderies_scaler.loc[i], diff_data.loc[j])
 
     if benign_dis['distance'].min() > attack_dis['distance'].min():
         print("{0}번째 Invalid Data => Attack / {1} : {2}".format(j, benign_dis['distance'].min(),attack_dis['distance'].min()))

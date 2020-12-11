@@ -105,10 +105,10 @@ for k in range(len(small_num)):
 
     print(color.RED + "\n정상/악성 각각의 벡터에 대한 유클리드 거리 측정" + color.END)
     for i in range(len(benign_data)):
-        benign_distance.loc[i] = distance.euclidean(benign_data.loc[i], centroid[0])
+        benign_distance.loc[i] = distance.cityblock(benign_data.loc[i], centroid[0])
 
     for i in range(len(attack_data)):
-        attack_distance.loc[i] = distance.euclidean(attack_data.loc[i], centroid[0])
+        attack_distance.loc[i] = distance.cityblock(attack_data.loc[i], centroid[0])
 
     print(color.RED + "\n유클리드 거리 기반 평균 및 표준편차 계산" + color.END)
     benign_arr = benign_distance.to_numpy()
@@ -152,10 +152,10 @@ for k in range(len(small_num)):
     t_start = time.time()
     for j in range(len(diff_data)):
         for i in range(len(benign_bounderies)):
-            benign_distance.loc[i] = distance.euclidean(benign_bounderies.loc[i], diff_data.loc[j])
+            benign_distance.loc[i] = distance.cityblock(benign_bounderies.loc[i], diff_data.loc[j])
 
         for i in range(len(attack_bounderies)):
-            attack_distance.loc[i] = distance.euclidean(attack_bounderies.loc[i], diff_data.loc[j])
+            attack_distance.loc[i] = distance.cityblock(attack_bounderies.loc[i], diff_data.loc[j])
 
         if benign_distance['distance'].min() > attack_distance['distance'].min():
             dif_prelist.append(1)
@@ -180,4 +180,4 @@ for k in range(len(small_num)):
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 print(result_data.shape)
-result_data.to_csv("dataset/threshold.csv", index=False)
+result_data.to_csv("dataset/threshold_2.csv", index=False)

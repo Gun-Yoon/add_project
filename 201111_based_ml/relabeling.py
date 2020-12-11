@@ -38,12 +38,12 @@ print(color.RED+"\nEuclidean distance measure between benign/attack boundaries a
 for j in range(len(diff_data)):
     #lineB = [str(i) for i in list(diff_data.loc[j].array)]
     for i in range(len(benign_bounderies)):
-        benign_distance.loc[i] = distance.euclidean(benign_bounderies.loc[i],diff_data.loc[j])
+        benign_distance.loc[i] = distance.cityblock(benign_bounderies.loc[i],diff_data.loc[j])
         #lineA =[str(i) for i in list(benign_bounderies.loc[i].array)]
         #benign_distance.loc[i] = jaccard_score(lineA,lineB, average=None)
 
     for i in range(len(attack_bounderies)):
-        attack_distance.loc[i] = distance.euclidean(attack_bounderies.loc[i],diff_data.loc[j])
+        attack_distance.loc[i] = distance.cityblock(attack_bounderies.loc[i],diff_data.loc[j])
         #lineA = [str(i) for i in list(attack_bounderies.loc[i].array)]
         #attack_distance.loc[i] = jaccard_score(lineA, lineB, average=None)
 
