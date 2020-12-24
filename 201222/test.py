@@ -192,7 +192,7 @@ for data_num in range(len(dis_df)):
     for label_num in range(len(label_list)):
         wei = weibull_min.cdf(dis_df[label_list[label_num]][data_num], weibull_model[label_num][0], weibull_model[label_num][1], scale=weibull_model[label_num][2])
         #probability_cl.append(dis_df[label_list[label_num]][data_num]+(dis_df[label_list[label_num]][data_num]*wei))
-        probability_cl.append(round(dis_df[label_list[label_num]][data_num]*wei, 10))
+        probability_cl.append(round(dis_df[label_list[label_num]][data_num], 10))
     #print(probability_cl)
 
     #probability_cl.append(np.sum(temp_dis*temp_wei))    #unkwon class 확률값 np.sum(temp_dis*temp_wei)

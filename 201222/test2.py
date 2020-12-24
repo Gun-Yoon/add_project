@@ -45,13 +45,14 @@ def scoring(df):
    Precision = precision_score(df['actual'], df['predict'], average=None)
    Recall = recall_score(df['actual'], df['predict'], average=None)
    F1 = f1_score(df['actual'], df['predict'], average=None)
-   score_list = [accuracy,Precision,Recall,F1]
+   score_list = [accuracy,F1,Precision,Recall]
    return score_list
 
 #학습 데이터 생성----------------
 data = pd.read_csv('dataset/pre_train.csv')
 #data = data.sample(n=100, random_state=42)
-#data = data[(data['Label'] != 'dos') == True]
+data = data[(data['Label'] != 'normal') == True]
+data = data[(data['Label'] != 'r2l') == True]
 
 data_label = data['Label'].tolist()
 data = data.drop(['Label'], axis=1)
@@ -89,7 +90,8 @@ for f in file_list:
     df = pd.read_csv(path+f)
     f_list.append(df)
 dis_df = pd.concat([i for i in f_list], axis=0)
-#dis_df = dis_df[(dis_df['Label'] != 'dos') == True]
+dis_df = dis_df[(dis_df['Label'] != 'normal') == True]
+dis_df = dis_df[(dis_df['Label'] != 'r2l') == True]
 #------------------------------
 
 #사전학습된 데이터 정렬(distance 높은 순서대로) 및 weibull fit 수행
@@ -115,6 +117,7 @@ for label in label_list:
 
 #테스트 데이터 생성----------------
 test_data = pd.read_csv('dataset/pre_test.csv')
+test_data = test_data[(test_data['Label'] != 'normal') == True]
 #test_data = test_data.sample(n=1000, random_state=42)
 test_label = test_data['Label'].tolist()
 test_data = test_data.drop(['Label'], axis=1)
@@ -163,38 +166,37 @@ for i in range(len(label_list)):
     dis_df[label_list[i]] = wk_vector[:,i]
 '''
 
-label_unknown = label_list#+['dos']
+label_unknown = label_list+['r2l']
 
 predict = []
 parameter_list = [0.0001,0.0001,0.001,0.01,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0,1]
-parameter=0.001
-print(parameter)
+parameter=8
 for data_num in range(len(dis_df)):
     probability_cl = []  # 각 class에 대한 확률갑 저장
     for label_num in range(len(label_list)):
         wei = weibull_min.cdf(dis_df[label_list[label_num]][data_num], weibull_model[label_num][0], weibull_model[label_num][1], scale=weibull_model[label_num][2])
         #probability_cl.append(dis_df[label_list[label_num]][data_num]+(dis_df[label_list[label_num]][data_num]*wei))
-        probability_cl.append(round(dis_df[label_list[label_num]][data_num], 10))
+        probability_cl.append(round(dis_df[label_list[label_num]][data_num], 15)+round(dis_df[label_list[label_num]][data_num]*wei, 15))
     #print(probability_cl)
 
     #probability_cl.append(np.sum(temp_dis*temp_wei))    #unkwon class 확률값 np.sum(temp_dis*temp_wei)
 
-    '''
+
     if min(probability_cl) >= parameter:
-        predict.append("dos")
+        predict.append("r2l")
     else:
         predict_index = probability_cl.index(min(probability_cl))
         predict.append(label_unknown[predict_index])
-    '''
 
-    predict_index = probability_cl.index(min(probability_cl))
-    predict.append(label_unknown[predict_index])
+    #predict_index = probability_cl.index(min(probability_cl))
+    #predict.append(label_unknown[predict_index])
     #print(label_unknown[predict_index])
     #print(test_label[data_num], label_unknown[predict_index])
 
 result_df = pd.DataFrame(data=predict, columns=['predict'])
 result_df['actual'] = test_label
 
+print(parameter)
 result_score = scoring(result_df)
 print(result_score)
 
