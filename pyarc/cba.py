@@ -80,6 +80,7 @@ class CBA():
         cars = None
 
         if not top_rules_args:
+            print("\nMake Rules\n")
             cars = generateCARs(transactions, support=self.support, confidence=self.confidence, maxlen=self.maxlen)
             #print(cars)
         else:

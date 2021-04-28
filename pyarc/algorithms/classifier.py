@@ -47,7 +47,6 @@ class Classifier:
                 return rule.consequent.value
             else:
                 return 'None'
-            
         return self.default_class
         
     def predict_all(self, dataset):
@@ -57,6 +56,7 @@ class Classifier:
         predicted = []
         
         for datacase in dataset:
+            #print(self.predict(datacase)) #개별 예측값 확인
             predicted.append(self.predict(datacase))
             
         return predicted
