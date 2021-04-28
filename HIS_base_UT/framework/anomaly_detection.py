@@ -1,10 +1,12 @@
 import pandas as pd
 from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import StandardScaler
+from HIS_base_UT.framework.model_management import model_save,model_load,model_check
 
 def anomaly(train_df, test_df, threat):
     print("")
     print("Anomaly Detection")
+
     train = train_df.copy()
     test = test_df.copy()
 
@@ -36,8 +38,13 @@ def anomaly(train_df, test_df, threat):
     train = train[(train['Label'] == 'Benign') == True]
     train = train.drop(['Label'], axis=1)
 
-    clf = OneClassSVM(kernel='linear',gamma='auto',nu=0.1)
-    clf.fit(train)
+    check = model_check(threat)
+    if check == 0:
+        clf = OneClassSVM(kernel='linear',gamma='auto',nu=0.1)
+        clf.fit(train)
+        model_save(clf,threat)
+    else:
+        clf = model_load(threat)
 
     temp_test = test[(test['predict'] == 'None') == True]
     temp_test = temp_test.drop(['Label','predict'], axis=1)

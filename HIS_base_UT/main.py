@@ -26,25 +26,23 @@ from HIS_base_UT.framework.data_seperate import df_sep
 from HIS_base_UT.framework.misuse_detection import misuse
 from HIS_base_UT.framework.anomaly_detection import anomaly
 from HIS_base_UT.performance import confusion_matrix
-import time
 
 # Data preprocessing
-sampling_data = sampling(day='A', data_size=500000) #A & B 가능
+sampling_data = sampling(day='A', data_size=100000) #A & B 가능
 print("\nSampling Data : {}".format(sampling_data.shape))
 
-start_t = time.time() #프레임워크 시작 시간
 # ioc matching
 ioc_result_df = matching(data=sampling_data)
 print("\nioc matching Data : {}".format(ioc_result_df.shape))
 
 # feature selection
 #fs_df = RFE.rfe_fs(ioc_result_df)
-#fs_df = mi.mi_fs(ioc_result_df)
-fs_df = dt_imfortance.dt_fs(ioc_result_df)
+fs_df = mi.mi_fs(ioc_result_df)
+#fs_df = dt_imfortance.dt_fs(ioc_result_df)
 print("\nFeature selection Data : {}".format(fs_df.shape))
 
 # data separation
-unknown_threat = 'DoS attacks-SlowHTTPTest'  #Bot,DoS attacks-Hulk,DoS attacks-SlowHTTPTest,FTP-BruteForce,SSH-Bruteforce,DDOS attack-HOIC
+unknown_threat = 'Bot'  #Bot,DoS attacks-Hulk,DoS attacks-SlowHTTPTest,FTP-BruteForce,SSH-Bruteforce,DDOS attack-HOIC
 train_df, test_df = df_sep(fs_df, unknown_threat)
 
 # misuse detection
@@ -52,9 +50,7 @@ misuse_result_df = misuse(train_df, test_df)
 
 # anomaly detection
 anomaly_result_df = anomaly(train_df, misuse_result_df, unknown_threat)
-end_t = time.time() #프레임워크 시작 시간
 
-print("\n프레임워크 수행 시간 : {:.4F}".format(end_t-start_t))
 
 # performance
 confusion_matrix(anomaly_result_df)
